@@ -229,3 +229,71 @@
   color: inherit;
   padding: 0;
 }
+/* --- Tiptap Table Fixed Layout & Spacing --- */
+
+.tiptap table,
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;        /* 1. Forces columns to respect proportional widths */
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+}
+
+/* Cell and Header Spacing & Boundary Enforcement */
+.tiptap td,
+.tiptap th,
+.ProseMirror td,
+.ProseMirror th {
+  min-width: 100px;           /* 2. Prevents columns from collapsing too small */
+  border: 1px solid #cbd5e1;  /* Slate-300 border for clear cell separation */
+  padding: 10px 14px;         /* 3. Internal breathing room between cell edges and text */
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+
+  /* 4. Critical: Prevents long text/URLs from blowing out column widths */
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* Ensure nested paragraphs don't introduce awkward margins */
+.tiptap td > p,
+.tiptap th > p,
+.ProseMirror td > p,
+.ProseMirror th > p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Distinct Header Row Styling */
+.tiptap th,
+.ProseMirror th {
+  font-weight: 600;
+  text-align: left;
+  background-color: #f8fafc;  /* Slate-50 */
+}
+
+/* Selected Cell Overlay */
+.tiptap .selectedCell:after,
+.ProseMirror .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  inset: 0;
+  background: rgba(59, 130, 246, 0.15);
+  pointer-events: none;
+}
+
+/* Column Resize Handle */
+.tiptap .column-resize-handle,
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: #3b82f6;
+  pointer-events: none;
+}
