@@ -2,52 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -117,17 +71,6 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-}
 /* Container Box */
 .editor-container {
   max-width: 768px;
@@ -146,9 +89,10 @@
 }
 
 /* TipTap Inner Prose Area */
-.tiptap {
+.tiptap,
+.tiptap-content,
+.ProseMirror {
   min-height: 200px;
-  padding: 1.25rem;
   outline: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #1f2937;
@@ -156,48 +100,48 @@
 }
 
 /* Element Typographic Spacing */
-.tiptap > * + * {
+.tiptap > * + *,
+.ProseMirror > * + * {
   margin-top: 0.75rem;
 }
 
-.tiptap h1 {
+.tiptap h1, .ProseMirror h1 {
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.2;
 }
 
-.tiptap h2 {
+.tiptap h2, .ProseMirror h2 {
   font-size: 1.35rem;
   font-weight: 600;
   line-height: 1.3;
   margin-top: 1.5rem;
 }
 
-.tiptap h3 {
+.tiptap h3, .ProseMirror h3 {
   font-size: 1.15rem;
   font-weight: 600;
   margin-top: 1.25rem;
 }
 
-.tiptap p {
+.tiptap p, .ProseMirror p {
   font-size: 1rem;
 }
 
-.tiptap ul,
-.tiptap ol {
+.tiptap ul, .tiptap ol, .ProseMirror ul, .ProseMirror ol {
   padding-left: 1.5rem;
 }
 
-.tiptap ul {
+.tiptap ul, .ProseMirror ul {
   list-style-type: disc;
 }
 
-.tiptap ol {
+.tiptap ol, .ProseMirror ol {
   list-style-type: decimal;
 }
 
-.tiptap blockquote {
-  border-left: 3px solid #3b82f6;
+.tiptap blockquote, .ProseMirror blockquote {
+  border-left: 3px solid #6366f1;
   margin-left: 0;
   margin-right: 0;
   padding-left: 1rem;
@@ -205,7 +149,7 @@
   color: #4b5563;
 }
 
-.tiptap pre {
+.tiptap pre, .ProseMirror pre {
   background-color: #0f172a;
   color: #f8fafc;
   padding: 0.75rem 1rem;
@@ -215,7 +159,7 @@
   overflow-x: auto;
 }
 
-.tiptap code {
+.tiptap code, .ProseMirror code {
   background-color: #f1f5f9;
   color: #0f172a;
   padding: 0.2rem 0.4rem;
@@ -224,69 +168,88 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.tiptap pre code {
+.tiptap pre code, .ProseMirror pre code {
   background-color: transparent;
   color: inherit;
   padding: 0;
 }
-/* --- Tiptap Table Fixed Layout & Spacing --- */
 
-.tiptap table,
-.ProseMirror table {
-  border-collapse: collapse;
-  table-layout: fixed;        /* 1. Forces columns to respect proportional widths */
-  width: 100%;
+/* ==========================================================================
+   TIPTAP TABLE FIXES (Guaranteed Visible Grids & Solid Borders)
+   ========================================================================== */
+
+/* 1. TipTap Table Wrapper */
+.tableWrapper {
+  overflow-x: auto;
   margin: 1.5rem 0;
-  overflow: hidden;
+  width: 100%;
 }
 
-/* Cell and Header Spacing & Boundary Enforcement */
+/* 2. Fixed Layout & Visible Borders (Using !important to beat Tailwind v4 Preflight) */
+.tiptap table,
+.tiptap-content table,
+.ProseMirror table {
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  width: 100% !important;
+  margin: 1.25rem 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px;
+}
+
+/* 3. Cell Dimensions & PREVENT COLLAPSE */
 .tiptap td,
 .tiptap th,
+.tiptap-content td,
+.tiptap-content th,
 .ProseMirror td,
 .ProseMirror th {
-  min-width: 100px;           /* 2. Prevents columns from collapsing too small */
-  border: 1px solid #cbd5e1;  /* Slate-300 border for clear cell separation */
-  padding: 10px 14px;         /* 3. Internal breathing room between cell edges and text */
-  vertical-align: top;
-  box-sizing: border-box;
-  position: relative;
-
-  /* 4. Critical: Prevents long text/URLs from blowing out column widths */
+  min-width: 100px !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 10px 14px !important;
+  vertical-align: top !important;
+  box-sizing: border-box !important;
+  position: relative !important;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
 }
 
-/* Ensure nested paragraphs don't introduce awkward margins */
+/* Ensure empty cells have at least 1.5em height so they never collapse to 0px */
 .tiptap td > p,
 .tiptap th > p,
+.tiptap-content td > p,
+.tiptap-content th > p,
 .ProseMirror td > p,
 .ProseMirror th > p {
-  margin: 0;
-  line-height: 1.5;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+  min-height: 1.5em !important;
 }
 
 /* Distinct Header Row Styling */
 .tiptap th,
+.tiptap-content th,
 .ProseMirror th {
-  font-weight: 600;
-  text-align: left;
-  background-color: #f8fafc;  /* Slate-50 */
+  font-weight: 600 !important;
+  text-align: left !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
 /* Selected Cell Overlay */
 .tiptap .selectedCell:after,
+.tiptap-content .selectedCell:after,
 .ProseMirror .selectedCell:after {
   z-index: 2;
   position: absolute;
   content: "";
   inset: 0;
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(99, 102, 241, 0.15) !important;
   pointer-events: none;
 }
 
-/* Column Resize Handle */
+/* Column Resize Handle & Cursor */
 .tiptap .column-resize-handle,
 .ProseMirror .column-resize-handle {
   position: absolute;
@@ -294,6 +257,85 @@
   top: 0;
   bottom: -2px;
   width: 4px;
-  background-color: #3b82f6;
+  background-color: #6366f1;
   pointer-events: none;
+}
+
+.resize-cursor {
+  cursor: col-resize;
+}
+
+
+/* ==========================================================================
+   PRINT MEDIA STYLES (Enables Clean PDF Export Without UI Toolbars)
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  header,
+  footer,
+  nav,
+  aside,
+  .floating-island,
+  .print\:hidden {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  main > div {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   TIPTAP TASK LIST (Interactive Checkboxes)
+   ========================================================================== */
+ul[data-type="taskList"] {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0.75rem 0 !important;
+}
+
+ul[data-type="taskList"] li[data-type="taskItem"] {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 0.625rem !important;
+  margin-bottom: 0.375rem !important;
+}
+
+ul[data-type="taskList"] li[data-type="taskItem"] > label {
+  user-select: none;
+  margin-top: 0.2rem;
+  display: flex;
+  align-items: center;
+}
+
+ul[data-type="taskList"] li[data-type="taskItem"] > label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #6366f1;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+}
+
+ul[data-type="taskList"] li[data-type="taskItem"] > div {
+  flex: 1 1 auto;
+}
+
+ul[data-type="taskList"] li[data-type="taskItem"][data-checked="true"] > div {
+  text-decoration: line-through;
+  color: #94a3b8;
 }

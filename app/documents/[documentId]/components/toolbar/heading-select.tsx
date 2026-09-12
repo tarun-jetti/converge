@@ -1,37 +1,30 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Editor, useEditorState } from "@tiptap/react";
-import { ChevronDown } from "lucide-react";
+import React from 'react';
+import { Editor } from '@tiptap/react';
+import { ChevronDown } from 'lucide-react';
 
 interface HeadingSelectProps {
   editor: Editor | null;
 }
 
 export function HeadingSelect({ editor }: HeadingSelectProps) {
-  const currentFormat = useEditorState({
-    editor,
-    selector: (ctx) => {
-      if (!ctx.editor) return "paragraph";
-      if (ctx.editor.isActive("heading", { level: 1 })) return "h1";
-      if (ctx.editor.isActive("heading", { level: 2 })) return "h2";
-      if (ctx.editor.isActive("heading", { level: 3 })) return "h3";
-      return "paragraph";
-    },
-  }) ?? "paragraph";
-
   if (!editor) return null;
+
+  let currentFormat = 'paragraph';
+  if (editor.isActive('heading', { level: 1 })) currentFormat = 'h1';
+  else if (editor.isActive('heading', { level: 2 })) currentFormat = 'h2';
+  else if (editor.isActive('heading', { level: 3 })) currentFormat = 'h3';
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-
-    if (value === "paragraph") {
+    if (value === 'paragraph') {
       editor.chain().focus().setParagraph().run();
-    } else if (value === "h1") {
+    } else if (value === 'h1') {
       editor.chain().focus().toggleHeading({ level: 1 }).run();
-    } else if (value === "h2") {
+    } else if (value === 'h2') {
       editor.chain().focus().toggleHeading({ level: 2 }).run();
-    } else if (value === "h3") {
+    } else if (value === 'h3') {
       editor.chain().focus().toggleHeading({ level: 3 }).run();
     }
   };
@@ -42,7 +35,7 @@ export function HeadingSelect({ editor }: HeadingSelectProps) {
         value={currentFormat}
         onChange={handleSelect}
         onMouseDown={(e) => e.stopPropagation()}
-        className="appearance-none bg-transparent hover:bg-slate-100 text-xs font-medium text-slate-700 py-1.5 pl-2.5 pr-7 rounded border border-slate-200 outline-none cursor-pointer transition-colors"
+        className="appearance-none bg-slate-50 hover:bg-slate-100/80 text-xs font-semibold text-slate-800 py-1.5 pl-2.5 pr-7 rounded-xl border border-slate-200/80 outline-none cursor-pointer transition-colors shadow-2xs"
       >
         <option value="paragraph">Normal Text</option>
         <option value="h1">Heading 1</option>
