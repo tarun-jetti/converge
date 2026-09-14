@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+    url      = env("DATABASE_URL")
+
+}
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  password        String
+  name            String?
+  avatarUrl       String?
+  
+  // 1. Documents this user created and owns
+  ownedDocuments  Document[] @relation("DocumentOwner")
+  
+  // 2. All documents this user has worked on / collaborated on
+  workedDocuments Document[] @relation("DocumentCollaborators")
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@map("users")
+}
+
+model Document {
+  id            String   @id @default(uuid())
+  title         String   @default("Untitled Document")
+  ydocData      Bytes?
+  
+  // 1. The document creator
+  ownerId       String
+  owner         User     @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // 2. Everyone who has worked on this document
+  collaborators User[]   @relation("DocumentCollaborators")
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("documents")
+}

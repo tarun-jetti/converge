@@ -3,3 +3,5 @@ dist/
 .env
 .env.*
 *.log
+
+/src/generated/prisma
