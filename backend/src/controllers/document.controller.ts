@@ -7,6 +7,7 @@ const documentSchema = z.object({
   title: z.string().trim().max(100, { message: 'Title must be at most 100 characters' }).optional(),
 });
 
+
 // Helper to safely extract string ID from params
 function getParamId(params: any): string {
   return Array.isArray(params.id) ? params.id[0] : params.id;
