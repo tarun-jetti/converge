@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -19,6 +19,8 @@ import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
 import { Color } from '@tiptap/extension-color';
 import { FontSize as FontSizeExtension } from '../../extentions/font-size';
+import { apiFetch } from '@/lib/api';
+import { DocumentItem } from '@/lib/types';
 
 // Modular Components
 import { DocumentHeader } from './components/header/document-header';
@@ -60,8 +62,43 @@ export default function DocumentEditor({
 
   // Document UI State
   const [documentTitle, setDocumentTitle] = useState(
-    initialTemplate ? initialTemplate.defaultTitle : 'Project Roadmap & Scope'
+    initialTemplate ? initialTemplate.defaultTitle : 'Untitled Document'
   );
+
+  // Sync document title from server on mount
+  useEffect(() => {
+    if (!documentId || documentId === 'default-doc') return;
+    let isMounted = true;
+    apiFetch<{ document: DocumentItem }>(`/api/documents/${documentId}`)
+      .then((res) => {
+        if (isMounted && res?.document?.title) {
+          setDocumentTitle(res.document.title);
+        }
+      })
+      .catch((err) => {
+        // Fallback to local or template title silently
+        console.debug('Using local document title:', err?.message || err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [documentId]);
+
+  // Rename document handler with server sync
+  const handleTitleChange = useCallback(
+    (newTitle: string) => {
+      setDocumentTitle(newTitle);
+      if (!documentId || documentId === 'default-doc') return;
+      apiFetch(`/api/documents/${documentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title: newTitle }),
+      }).catch((err) => {
+        console.warn('Could not sync title to server:', err);
+      });
+    },
+    [documentId]
+  );
+
   const [zoomLevel, setZoomLevel] = useState(100);
   const [layoutMode, setLayoutMode] = useState<PageLayoutMode>('canvas');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -119,17 +156,8 @@ export default function DocumentEditor({
     }
     if (initialTemplate) return initialTemplate.content;
     return `
-      <h1>Project Roadmap & Scope</h1>
-      <p>This document serves as the design specification for our next-generation collaborative workspace.</p>
-      <h2>Core Principles</h2>
-      <p>Every keystroke synchronizes deterministically across connected peers with sub-millisecond latency.</p>
-      <blockquote>"Design is not just what it looks like and feels like. Design is how it works."</blockquote>
-      <h2>Implementation Milestones</h2>
-      <ul data-type="taskList">
-        <li data-type="taskItem" data-checked="true">Local CRDT memory buffer</li>
-        <li data-type="taskItem" data-checked="true">Real-time collaborative cursor presence</li>
-        <li data-type="taskItem" data-checked="false">WebRTC peer mesh discovery</li>
-      </ul>
+      <h1>Untitled Document</h1>
+      <p>Start typing your thoughts, or press <strong>'/'</strong> for quick commands and formatting...</p>
     `;
   }, [documentId, initialTemplate]);
 
@@ -197,13 +225,13 @@ export default function DocumentEditor({
           class: 'text-indigo-600 underline underline-offset-2 hover:text-indigo-800 cursor-pointer',
         },
       }),
+      TextStyle,
+      Color,
+      FontFamily,
+      FontSizeExtension,
       Highlight.configure({
         multicolor: true,
       }),
-      Color,
-      TextStyle,
-      FontFamily,
-      FontSizeExtension,
     ],
     content: startingContent,
     editorProps: {
@@ -226,12 +254,12 @@ export default function DocumentEditor({
       if (!editor) return;
       if (mode === 'replace') {
         editor.commands.setContent(template.content);
-        setDocumentTitle(template.defaultTitle);
+        handleTitleChange(template.defaultTitle);
       } else {
         editor.commands.insertContent(template.content);
       }
     },
-    [editor]
+    [editor, handleTitleChange]
   );
 
   return (
@@ -239,7 +267,7 @@ export default function DocumentEditor({
       {/* 1. TOP MODULAR HEADER */}
       <DocumentHeader
         documentTitle={documentTitle}
-        onTitleChange={setDocumentTitle}
+        onTitleChange={handleTitleChange}
         saveStatus={saveStatus}
         onOpenTemplates={() => setShowTemplateModal(true)}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}

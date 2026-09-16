@@ -1,31 +1,11 @@
-import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth';
-import documentRoutes from './routes/document';
-import { authMiddleware as requireAuth } from './middleware/auth';
-
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 4000;
+import { createApp } from './app.js';
 
-app.use(cors({
-  origin: 'localhost:3000', // Adjust this to your frontend's origin
-  credentials: true, // Allow cookies to be sent
-}));
-app.use(express.json());
-app.use('/api/auth', authRoutes);
-app.use('/api/documents', requireAuth, documentRoutes);
+const PORT = Number(process.env.PORT) || 4000;
+const app = createApp();
 
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'converge-backend',
-    timestamp: new Date().toISOString(),
-  });
-});
-
-app.listen(PORT, () => {
-  console.log(`[Converge Backend] Running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Converge HTTP API] Server running on http://localhost:${PORT}`);
 });

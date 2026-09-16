@@ -353,8 +353,22 @@ export function getAllTemplates(): DocTemplate[] {
   return TEMPLATES;
 }
 
+const TEMPLATE_ALIASES: Record<string, string> = {
+  spec: 'software-rfc',
+  rfc: 'software-rfc',
+  meeting: 'meeting-notes',
+  retro: 'weekly-report',
+  weekly: 'weekly-report',
+  resume: 'resume',
+  leave: 'leave-letter',
+  blank: 'blank',
+};
+
 export function getTemplateById(id: string): DocTemplate | undefined {
-  return TEMPLATES.find((t) => t.id.toLowerCase() === id.toLowerCase());
+  if (!id) return undefined;
+  const normalized = id.toLowerCase().trim();
+  const canonicalId = TEMPLATE_ALIASES[normalized] || normalized;
+  return TEMPLATES.find((t) => t.id.toLowerCase() === canonicalId);
 }
 
 export function getTemplatesByCategory(category: string): DocTemplate[] {

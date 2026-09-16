@@ -36,6 +36,14 @@ export function ColorPickerPopover({ editor }: ColorPickerPopoverProps) {
   const [showHighlight, setShowHighlight] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
+  const savedSelectionRef = useRef<{ from: number; to: number } | null>(null);
+
+  const saveSelection = () => {
+    if (editor && editor.state) {
+      const { from, to } = editor.state.selection;
+      savedSelectionRef.current = { from, to };
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -53,21 +61,35 @@ export function ColorPickerPopover({ editor }: ColorPickerPopoverProps) {
   if (!editor) return null;
 
   const applyColor = (hex: string) => {
-    if (hex === '#0f172a') {
-      (editor.chain().focus() as any).unsetColor().run();
-    } else {
-      (editor.chain().focus() as any).setColor(hex).run();
-    }
     setShowTextColor(false);
+    if (!editor) return;
+
+    const chain = editor.chain().focus();
+    if (savedSelectionRef.current && savedSelectionRef.current.from !== savedSelectionRef.current.to) {
+      chain.setTextSelection(savedSelectionRef.current);
+    }
+
+    if (hex === '#0f172a' || hex === 'default') {
+      (chain as any).unsetColor().run();
+    } else {
+      (chain as any).setColor(hex).run();
+    }
   };
 
   const applyHighlight = (hex: string) => {
-    if (hex === 'none') {
-      (editor.chain().focus() as any).unsetHighlight().run();
-    } else {
-      (editor.chain().focus() as any).toggleHighlight({ color: hex }).run();
-    }
     setShowHighlight(false);
+    if (!editor) return;
+
+    const chain = editor.chain().focus();
+    if (savedSelectionRef.current && savedSelectionRef.current.from !== savedSelectionRef.current.to) {
+      chain.setTextSelection(savedSelectionRef.current);
+    }
+
+    if (hex === 'none') {
+      (chain as any).unsetHighlight().run();
+    } else {
+      (chain as any).setHighlight({ color: hex }).run();
+    }
   };
 
   return (
@@ -76,9 +98,11 @@ export function ColorPickerPopover({ editor }: ColorPickerPopoverProps) {
       <div className="relative" ref={textRef}>
         <button
           type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            setShowTextColor(!showTextColor);
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            saveSelection();
+            setShowTextColor((prev) => !prev);
             setShowHighlight(false);
           }}
           className={`p-1.5 rounded-lg transition-all ${
@@ -92,22 +116,43 @@ export function ColorPickerPopover({ editor }: ColorPickerPopoverProps) {
         </button>
 
         {showTextColor && (
-          <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 select-none"
+          >
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
               Text Color
             </div>
             <div className="grid grid-cols-5 gap-1.5">
-              {TEXT_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => applyColor(c.value)}
-                  className="w-6 h-6 rounded-full border border-slate-200/80 hover:scale-110 transition shadow-2xs"
-                  style={{ backgroundColor: c.value }}
-                  title={c.label}
-                />
-              ))}
+              {TEXT_COLORS.map((c) => {
+                const isSelected = c.value === '#0f172a'
+                  ? !editor.isActive('textStyle')
+                  : editor.isActive('textStyle', { color: c.value });
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      applyColor(c.value);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      applyColor(c.value);
+                    }}
+                    className={`w-6 h-6 rounded-full border transition shadow-2xs ${
+                      isSelected ? 'ring-2 ring-indigo-600 scale-110 border-white' : 'border-slate-200/80 hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                    title={c.label}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
@@ -117,9 +162,11 @@ export function ColorPickerPopover({ editor }: ColorPickerPopoverProps) {
       <div className="relative" ref={highlightRef}>
         <button
           type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            setShowHighlight(!showHighlight);
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            saveSelection();
+            setShowHighlight((prev) => !prev);
             setShowTextColor(false);
           }}
           className={`p-1.5 rounded-lg transition-all ${
@@ -133,24 +180,45 @@ export function ColorPickerPopover({ editor }: ColorPickerPopoverProps) {
         </button>
 
         {showHighlight && (
-          <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            className="absolute top-full mt-2 left-0 w-48 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 select-none"
+          >
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
               Highlight Color
             </div>
             <div className="grid grid-cols-4 gap-1.5">
-              {HIGHLIGHT_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => applyHighlight(c.value)}
-                  className="h-6 rounded-md border border-slate-200/80 hover:scale-105 transition flex items-center justify-center text-[10px] font-semibold"
-                  style={{ backgroundColor: c.value === 'none' ? '#f1f5f9' : c.value }}
-                  title={c.label}
-                >
-                  {c.value === 'none' ? 'None' : ''}
-                </button>
-              ))}
+              {HIGHLIGHT_COLORS.map((c) => {
+                const isSelected = c.value === 'none'
+                  ? !editor.isActive('highlight')
+                  : editor.isActive('highlight', { color: c.value });
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      applyHighlight(c.value);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      applyHighlight(c.value);
+                    }}
+                    className={`h-6 rounded-md border transition flex items-center justify-center text-[10px] font-semibold ${
+                      isSelected ? 'ring-2 ring-indigo-600 scale-105 border-indigo-400' : 'border-slate-200/80 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: c.value === 'none' ? '#f1f5f9' : c.value }}
+                    title={c.label}
+                  >
+                    {c.value === 'none' ? 'None' : ''}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

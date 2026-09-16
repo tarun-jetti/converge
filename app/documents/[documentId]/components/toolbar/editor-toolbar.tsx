@@ -67,7 +67,7 @@ export function EditorToolbar({
 
   return (
     <div className="relative z-30 pt-3 pb-2 px-4 flex justify-center shrink-0 print:hidden">
-      <section className="bg-white/90 backdrop-blur-xl border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.07)] rounded-2xl px-2.5 py-1.5 flex items-center gap-1 overflow-x-auto max-w-5xl transition-all">
+      <section className="bg-white/90 backdrop-blur-xl border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.07)] rounded-2xl px-2.5 py-1.5 flex items-center gap-1 overflow-visible max-w-5xl transition-all">
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5">
           <button

@@ -16,6 +16,14 @@ export function TableGridPopover({ editor, isInsideTable }: TableGridPopoverProp
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredGrid, setHoveredGrid] = useState({ rows: 3, cols: 3 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const savedSelectionRef = useRef<{ from: number; to: number } | null>(null);
+
+  const saveSelection = () => {
+    if (editor && editor.state) {
+      const { from, to } = editor.state.selection;
+      savedSelectionRef.current = { from, to };
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -33,17 +41,36 @@ export function TableGridPopover({ editor, isInsideTable }: TableGridPopoverProp
 
   const insertTable = (rows: number, cols: number) => {
     setIsOpen(false);
+    if (!editor) return;
+
     try {
-      (editor.chain().focus() as any)
+      if (savedSelectionRef.current) {
+        editor.chain().setTextSelection(savedSelectionRef.current).run();
+      }
+
+      // 1. Standard TipTap insertTable (identical to slash command)
+      const success = (editor.chain().focus() as any)
         .insertTable({ rows, cols, withHeaderRow: true })
         .run();
-    } catch {
-      let html = '<table style="border-collapse: collapse; width: 100%; border: 1px solid #cbd5e1; margin: 1.25rem 0;"><tbody>';
+
+      if (!success) {
+        // 2. If rejected at current cursor node, split and insert
+        editor
+          .chain()
+          .focus()
+          .splitBlock()
+          .setParagraph()
+          .insertTable({ rows, cols, withHeaderRow: true })
+          .run();
+      }
+    } catch (err) {
+      console.warn('Table insertion error:', err);
+      let html = '<table class="tiptap-table" style="border-collapse: collapse; width: 100%; border: 1px solid #cbd5e1; margin: 1.25rem 0;"><tbody>';
       for (let r = 0; r < rows; r++) {
-        html += '<tr>';
+        html += '<tr style="border-bottom: 1px solid #cbd5e1;">';
         for (let c = 0; c < cols; c++) {
           if (r === 0) {
-            html += `<th style="border: 1px solid #cbd5e1; padding: 10px 14px; background-color: #f1f5f9; font-weight: 600; min-width: 100px; text-align: left;">Header ${c + 1}</th>`;
+            html += `<th style="border: 1px solid #cbd5e1; padding: 10px 14px; background-color: #f1f5f9; font-weight: 600; min-width: 100px; text-align: left;"><p>Header ${c + 1}</p></th>`;
           } else {
             html += `<td style="border: 1px solid #cbd5e1; padding: 10px 14px; min-width: 100px; vertical-align: top;"><p>Cell ${r},${c + 1}</p></td>`;
           }
@@ -51,7 +78,7 @@ export function TableGridPopover({ editor, isInsideTable }: TableGridPopoverProp
         html += '</tr>';
       }
       html += '</tbody></table><p></p>';
-      editor.chain().focus().insertContent(html).run();
+      (editor.chain().focus() as any).createParagraphNear().insertContent(html).run();
     }
   };
 
@@ -59,8 +86,12 @@ export function TableGridPopover({ editor, isInsideTable }: TableGridPopoverProp
     <div className="relative inline-block" ref={containerRef}>
       <button
         type="button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(!isOpen)}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          saveSelection();
+          setIsOpen((prev) => !prev);
+        }}
         className={`p-1.5 rounded-lg transition-all duration-150 ${
           isInsideTable
             ? 'bg-indigo-50 text-indigo-700 font-semibold ring-1 ring-indigo-200'
@@ -74,7 +105,13 @@ export function TableGridPopover({ editor, isInsideTable }: TableGridPopoverProp
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 left-0 w-52 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 select-none">
+        <div
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          className="absolute top-full mt-2 left-0 w-52 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 select-none"
+        >
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
             <span className="text-[11px] font-bold text-slate-700">Insert Table</span>
             <span className="text-[11px] font-mono font-semibold text-indigo-600">
@@ -94,8 +131,17 @@ export function TableGridPopover({ editor, isInsideTable }: TableGridPopoverProp
                   <button
                     key={`${r}-${c}`}
                     type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      insertTable(r + 1, c + 1);
+                    }}
                     onMouseEnter={() => setHoveredGrid({ rows: r + 1, cols: c + 1 })}
-                    onClick={() => insertTable(r + 1, c + 1)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      insertTable(r + 1, c + 1);
+                    }}
                     className={`w-6 h-6 rounded-md border transition-colors ${
                       isSelected
                         ? 'bg-indigo-500 border-indigo-600 shadow-2xs'
